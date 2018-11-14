@@ -10,6 +10,9 @@ TODO: Insert Github repository link here.
 
 import paho.mqtt.client as mqtt
 import time
+import requests
+import json
+from datetime import datetime
 
 # MQTT variables
 broker_hostname = "eclipse.usc.edu"
@@ -98,6 +101,11 @@ if __name__ == '__main__':
     client.connect(broker_hostname, broker_port, 60)
     client.loop_start()
 
+    hdr = {
+        'Content-Type': 'application/json',
+        'Authorization': None #not using HTTP secure
+    }
+
     state = 0
     stateS = 0
     timeout = 0
@@ -126,8 +134,8 @@ if __name__ == '__main__':
     #tracking state using state
         '''
         0 --original state
-        1--moving from left to right 
-        2--moving from right to left
+        1--moving  right 
+        2--moving  left
         3 still and on the left side
         4 still and on the right side
         5 still and in the middle
@@ -190,22 +198,32 @@ if __name__ == '__main__':
                             state=3
                         elif stateS == 2 and timeout == 0:
                             state=5
-
+        message=""
+        sendmessage=0
         if state==1:
-            print("moving left to right")
+            print("moving right")
+            message="moving right"
+            sendmessage=1
         if state==2:
-            print("moving right to left")
+            print("moving left")
+            sendmessage=1
+            message="moving left"
         if len(ranger1_dist)>1:
             if int(ranger1_dist[-1])<140 or int(ranger2_dist[-1])<120:
+                sendmessage=1
                 if state==3:
-                    print("still in the left")
+                    print("still-left")
+                    message="still-left"
                 if state==4:
-                    print("still in the right")
+                    print("still-right")
+                    message="still-right"
                 if state==5:
                     if ranger1_average[-1:]>ranger2_average[-1:]:
-                        print("still in the right_")
+                        print("still-right")
+                        message="still-right"
                     elif ranger1_average[-1:]<ranger2_average[-1:]:
-                        print("still in the left_")
+                        print("still-left")
+                        message="still-left"
 
         #print("timeout: "+str(timeout))
         print("state: "+ str(state))
@@ -214,5 +232,14 @@ if __name__ == '__main__':
         #print("average2: "+str(ranger2_average))
         if timeout>0:
             timeout=int(timeout)-1
-
+        if sendmessage==1:
+            payload = {
+            'time': str(datetime.now()),
+            'event': message
+            }
+            response = requests.post("http://0.0.0.0:5000/post-event", headers = hdr,
+                                data = json.dumps(payload))
+            print(response.json())
+            sendmessage=0
+            message=""
         time.sleep(0.2)
