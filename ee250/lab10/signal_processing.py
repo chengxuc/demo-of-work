@@ -31,10 +31,14 @@ ultrasonic_ranger2_topic = "ultrasonic_ranger2/real_data"
 # like to keep at any point in time.
 MAX_LIST_LENGTH = 8
 ranger1_dist = []
+#moving average
 ranger1_average=[]
+#differential
 ranger1_delta=[]
 ranger2_dist = []
+#moving average
 ranger2_average=[]
+#differential
 ranger2_delta=[]
 def ranger1_callback(client, userdata, msg):
     if int(msg.payload)>220:
@@ -226,12 +230,13 @@ if __name__ == '__main__':
                         message="still-left"
 
         #print("timeout: "+str(timeout))
-        print("state: "+ str(state))
-        print("stateS: "+str(stateS))
+        #print("state: "+ str(state))
+        #print("stateS: "+str(stateS))
         #print("average1: "+str(ranger1_average))
         #print("average2: "+str(ranger2_average))
         if timeout>0:
             timeout=int(timeout)-1
+        #the http posting process
         if sendmessage==1:
             payload = {
             'time': str(datetime.now()),
